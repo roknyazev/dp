@@ -3,6 +3,22 @@ import random
 from abc import abstractmethod
 from graph.graph import graph
 import numpy as np
+from pyqtgraph.Qt import QtGui
+
+
+def custom_symbol(symbol: str, font: QtGui.QFont = QtGui.QFont("San Serif")) -> QtGui.QPainterPath:
+    """Create custom symbol with font"""
+    # We just want one character here, comment out otherwise
+    assert len(symbol) == 1
+    pg_symbol = QtGui.QPainterPath()
+    pg_symbol.addText(0, 0, font, symbol)
+    # Scale symbol
+    br = pg_symbol.boundingRect()
+    scale = min(1. / br.width(), 1. / br.height())
+    tr = QtGui.QTransform()
+    tr.scale(scale, scale)
+    tr.translate(-br.x() - br.width() / 2., -br.y() - br.height() / 2.)
+    return tr.map(pg_symbol)
 
 
 class AbstractUpdatableItem:
@@ -21,15 +37,30 @@ class AbstractUpdatableItem:
 
 class ScatterSmallUAV(AbstractUpdatableItem):
     def __init__(self):
-        self.plot_item = pg.ScatterPlotItem(size=5, pen=pg.mkPen(None), brush=pg.mkBrush(0, 255, 255, 120))
+        self.plot_item = pg.ScatterPlotItem(size=15, pen=pg.mkPen(None), brush=pg.mkBrush(0, 255, 255, 120))
         self.plot_item.opts["useCache"] = True
+        self.calls = 0
+        self.symbol = None
+
+    def rotate(self, symbol, angle):
+        transform = QtGui.QTransform()
+        transform.rotate(angle)
+        return transform.map(symbol)
 
     def get_plot_item(self):
         return self.plot_item
 
     def update(self):
-        self.plot_item.setData([random.normalvariate(0, 10) for _ in range(500)],
-                               [random.normalvariate(0, 10) for _ in range(500)])
+        if self.calls == 0:
+            self.calls = 1
+            self.symbol = custom_symbol('➤')
+        positions = ([random.normalvariate(0, 10) for _ in range(500)],
+                     [random.normalvariate(0, 10) for _ in range(500)])
+        positions = list(zip(*positions))
+        angles = [random.randint(0, 360) for _ in range(500)]
+        symbols = list(map(lambda x: self.rotate(self.symbol, x), angles))
+        data = [{'pos': pos, 'symbol': symbol} for pos, symbol in zip(positions, symbols)]
+        self.plot_item.setData(data)
 
     def reset_calls_to_zero(self):
         pass

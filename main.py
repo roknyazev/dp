@@ -15,5 +15,5 @@ if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):
 app = QtWidgets.QApplication(sys.argv)
 window = MainWindow()
 apply_stylesheet(app, theme='dark_amber.xml')
-window.show()
+window.showMaximized()
 app.exec_()
