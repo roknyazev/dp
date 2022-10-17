@@ -1,25 +1,17 @@
 import pyqtgraph as pg
-import random
 from abc import abstractmethod
 from graph.graph import graph
 import numpy as np
-from pyqtgraph.Qt import QtGui
+from vispy import scene, visuals
+from vispy.visuals.transforms import MatrixTransform
+import networkx as nx
+from vispy.visuals.graphs import layouts
+from vispy.visuals.line.line import LineVisual
 
 
-def custom_symbol(symbol: str, font: QtGui.QFont = QtGui.QFont("San Serif")) -> QtGui.QPainterPath:
-    """Create custom symbol with font"""
-    # We just want one character here, comment out otherwise
-    assert len(symbol) == 1
-    pg_symbol = QtGui.QPainterPath()
-    pg_symbol.addText(0, 0, font, symbol)
-    # Scale symbol
-    br = pg_symbol.boundingRect()
-    scale = min(1. / br.width(), 1. / br.height())
-    tr = QtGui.QTransform()
-    tr.scale(scale, scale)
-    tr.translate(-br.x() - br.width() / 2., -br.y() - br.height() / 2.)
-    return tr.map(pg_symbol)
-
+# 'disc', 'arrow', 'ring', 'clobber', 'square', 'diamond', 'vbar', 'hbar',
+# 'cross', 'tailed_arrow', 'x', 'triangle_up', 'triangle_down', 'star',
+# 'o', '+', '++', 's', '-', '|', '->', '>', '^', 'v', '*'
 
 class AbstractUpdatableItem:
     @abstractmethod
@@ -27,7 +19,7 @@ class AbstractUpdatableItem:
         pass
 
     @abstractmethod
-    def get_plot_item(self):
+    def clear(self):
         pass
 
     @abstractmethod
@@ -36,108 +28,145 @@ class AbstractUpdatableItem:
 
 
 class ScatterSmallUAV(AbstractUpdatableItem):
-    def __init__(self):
-        self.plot_item = pg.ScatterPlotItem(size=15, pen=pg.mkPen(None), brush=pg.mkBrush(0, 255, 255, 120))
-        self.plot_item.opts["useCache"] = True
-        self.calls = 0
-        self.symbol = None
+    def __init__(self, parent):
+        scatter = scene.visuals.create_visual_node(visuals.MarkersVisual)
+        self.plot_item = scatter(parent=parent)
+        self.plot_item.set_gl_state("translucent", blend=True, depth_test=True)
+        self.plot_item.transform = MatrixTransform()
 
-    def rotate(self, symbol, angle):
-        transform = QtGui.QTransform()
-        transform.rotate(angle)
-        return transform.map(symbol)
-
-    def get_plot_item(self):
-        return self.plot_item
+    def clear(self):
+        self.plot_item.set_data(np.random.rand(0, 2))
 
     def update(self):
-        if self.calls == 0:
-            self.calls = 1
-            self.symbol = custom_symbol('➤')
-        positions = ([random.normalvariate(0, 10) for _ in range(500)],
-                     [random.normalvariate(0, 10) for _ in range(500)])
-        positions = list(zip(*positions))
-        angles = [random.randint(0, 360) for _ in range(500)]
-        symbols = list(map(lambda x: self.rotate(self.symbol, x), angles))
-        data = [{'pos': pos, 'symbol': symbol} for pos, symbol in zip(positions, symbols)]
-        self.plot_item.setData(data)
+        n = 10000
+        pos = np.random.rand(n, 2)
+        self.plot_item.set_data(pos, symbol=">", size=15, face_color='blue')
 
     def reset_calls_to_zero(self):
         pass
 
 
 class ScatterMediumUAV(AbstractUpdatableItem):
-    def __init__(self):
-        self.plot_item = pg.ScatterPlotItem(size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 255, 120))
-        self.plot_item.opts["useCache"] = True
+    def __init__(self, parent):
+        scatter = scene.visuals.create_visual_node(visuals.MarkersVisual)
+        self.plot_item = scatter(parent=parent)
+        self.plot_item.set_gl_state("translucent", blend=True, depth_test=True)
 
-    def get_plot_item(self):
-        return self.plot_item
+    def clear(self):
+        self.plot_item.set_data(np.random.rand(0, 2))
 
     def update(self):
-        self.plot_item.setData([random.normalvariate(0, 10) for _ in range(500)],
-                               [random.normalvariate(0, 10) for _ in range(500)])
+        n = 10000
+        pos = np.random.rand(n, 2)
+        self.plot_item.set_data(pos, symbol=">", size=10, face_color=(0.2, 0.3, 0.6, 0.5))
 
     def reset_calls_to_zero(self):
         pass
 
 
 class ScatterLargeUAV(AbstractUpdatableItem):
-    def __init__(self):
-        self.plot_item = pg.ScatterPlotItem(size=15, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 0, 120))
-        self.plot_item.opts["useCache"] = True
-
-    def get_plot_item(self):
-        return self.plot_item
+    def __init__(self, parent):
+        scatter = scene.visuals.create_visual_node(visuals.MarkersVisual)
+        self.plot_item = scatter(parent=parent)
+        self.plot_item.set_gl_state("translucent", blend=True, depth_test=True)
 
     def update(self):
-        self.plot_item.setData([random.normalvariate(0, 10) for _ in range(500)],
-                               [random.normalvariate(0, 10) for _ in range(500)])
+        n = 10000
+        pos = np.random.rand(n, 2)
+        self.plot_item.set_data(pos, symbol=">", size=15, face_color=(0.2, 0.6, 0.3, 0.5))
+
+    def clear(self):
+        self.plot_item.set_data(np.random.rand(0, 2))
 
     def reset_calls_to_zero(self):
         pass
 
 
 class GraphItem(AbstractUpdatableItem):
-    def __init__(self):
-        self.plot_item = pg.GraphItem()
+    def __init__(self, parent):
+        self.parent = parent
         self.calls = 0
-        self.node_pens = {0: pg.mkPen(pg.mkColor(255, 255, 0, 255), width=1),
-                          1: pg.mkPen(pg.mkColor(255, 0, 255, 255), width=2),
-                          2: pg.mkPen(pg.mkColor(0, 255, 255, 255), width=3)}
-        self.edge_pens = {0: (255, 255, 0, 70, 1),
-                          1: (255, 0, 255, 70, 2),
-                          2: (0, 255, 255, 70, 5)}
-        self.dtype = [('red', np.ubyte), ('green', np.ubyte), ('blue', np.ubyte), ('alpha', np.ubyte), ('width', float)]
+        scatter = scene.visuals.create_visual_node(visuals.MarkersVisual)
+        self.plot_item = scatter(parent=parent)
 
-    def get_plot_item(self):
-        return self.plot_item
+        self.line_small = None
+        self.line_medium = None
+        self.line_large = None
+        self.scatter_small = None
+        self.scatter_medium = None
+        self.scatter_large = None
+
+    def clear(self):
+        self.line_small.set_data(np.random.rand(0, 2))
+        self.line_medium.set_data(np.random.rand(0, 2))
+        self.line_large.set_data(np.random.rand(0, 2))
+        self.scatter_small.set_data(np.random.rand(0, 2))
+        self.scatter_medium.set_data(np.random.rand(0, 2))
+        self.scatter_large.set_data(np.random.rand(0, 2))
 
     def update(self):
         if self.calls == 0:
             self.calls += 1
-            nodes = graph.get_all_nodes()
-            edges = graph.get_all_edges()
-            nodes_pos = []
-            nodes_style = []
-            for node in nodes:
-                nodes_pos.append((node['x'], node['y']))
-                nodes_style.append(self.node_pens[node['type']])
-            adj = []
-            edges_style = []
-            for edge in edges:
-                adj.append((edge['node1'], edge['node2']))
-                edges_style.append(self.edge_pens[edge['min_type']])
 
-            self.plot_item.setData(pos=np.array(nodes_pos),
-                                   adj=np.array(adj),
-                                   pen=np.array(edges_style, dtype=self.dtype),
-                                   symbolPen=nodes_style)
+            line_small_coords = []
+            for coord in graph.edges_coords(graph.get_small_edges()).values():
+                line_small_coords.append(coord[0])
+                line_small_coords.append(coord[1])
+            self.line_small = scene.visuals.Line
+            self.line_small = self.line_small(parent=self.parent)
+            self.line_small.set_data(pos=np.array(line_small_coords), connect='segments', color=(0.17, 0.62, 0.43, 0.2))
+
+            line_medium_coords = []
+            for coord in graph.edges_coords(graph.get_medium_edges()).values():
+                line_medium_coords.append(coord[0])
+                line_medium_coords.append(coord[1])
+            self.line_medium = scene.visuals.Line
+            self.line_medium = self.line_medium(parent=self.parent, connect='segments', color=(0.62, 0.57, 0.17, 0.2))
+            self.line_medium.set_data(pos=np.array(line_medium_coords))
+
+            line_large_coords = []
+            for coord in graph.edges_coords(graph.get_large_edges()).values():
+                line_large_coords.append(coord[0])
+                line_large_coords.append(coord[1])
+            self.line_large = scene.visuals.Line
+            self.line_large = self.line_large(parent=self.parent, connect='segments', color=(0.62, 0.22, 0.17, 0.2))
+            self.line_large.set_data(pos=np.array(line_large_coords))
+
+            node_small_coords = []
+            for node in graph.get_small_nodes().values():
+                node_small_coords.append((node['x'], node['y']))
+            self.scatter_small = scene.visuals.create_visual_node(visuals.MarkersVisual)
+            self.scatter_small = self.scatter_small(parent=self.parent)
+            self.scatter_small.set_data(pos=np.array(node_small_coords),
+                                        symbol='o',
+                                        face_color=(0.17, 0.62, 0.43, 1),
+                                        edge_color=(0.17, 0.62, 0.43, 1),
+                                        size=5)
+
+            node_medium_coords = []
+            for node in graph.get_medium_nodes().values():
+                node_medium_coords.append((node['x'], node['y']))
+            self.scatter_medium = scene.visuals.create_visual_node(visuals.MarkersVisual)
+            self.scatter_medium = self.scatter_medium(parent=self.parent)
+            self.scatter_medium.set_data(pos=np.array(node_medium_coords),
+                                         symbol='o',
+                                         face_color=(0.62, 0.57, 0.17, 1),
+                                         edge_color=(0.62, 0.57, 0.17, 1),
+                                         size=10)
+
+            node_large_coords = []
+            for node in graph.get_large_nodes().values():
+                node_large_coords.append((node['x'], node['y']))
+            self.scatter_large = scene.visuals.create_visual_node(visuals.MarkersVisual)
+            self.scatter_large = self.scatter_large(parent=self.parent)
+            self.scatter_large.set_data(pos=np.array(node_large_coords),
+                                        symbol='o',
+                                        face_color=(0.62, 0.22, 0.17, 1),
+                                        edge_color=(0.62, 0.22, 0.17, 1),
+                                        size=15)
 
     def reset_calls_to_zero(self):
         self.calls = 0
 
 
-# all_items = [ScatterLargeUAV(), ScatterMediumUAV(), ScatterSmallUAV()]
-# all_items = [ScatterLargeNode(), ScatterMediumNode(), ScatterSmallNode()]
-all_items = [ScatterLargeUAV(), ScatterMediumUAV(), ScatterSmallUAV(), GraphItem()]
+all_items = [ScatterLargeUAV, ScatterMediumUAV, ScatterSmallUAV, GraphItem, GraphItem]

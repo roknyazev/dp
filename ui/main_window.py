@@ -1,9 +1,10 @@
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QLabel
 from ui.ui import Ui_Dialog
 from PyQt5.QtCore import Qt
 from ui.main_visualisation import *
 from qt_material import QtStyleTools
 import os
+
 from ui.items import all_items
 
 
@@ -12,8 +13,19 @@ class MainWindow(QMainWindow, Ui_Dialog, QtStyleTools):
         super().__init__()
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setupUi(self)
-        self.main_view = MainVisualization(all_items)
-        self.gridLayout.addWidget(self.main_view)
+
+        label = QLabel()
+        self.gridLayout.addWidget(label)
+
+        self.main_view = MainVisualization(1529,
+                                           879, all_items)
+        self.main_view.create_native()
+        self.main_view.native.setParent(label)
+
+
+
+        print()
+
         self.startstopButton.clicked.connect(self.start_stop)
 
         self.pauseButton.clicked.connect(self.pause)
