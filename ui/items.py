@@ -38,9 +38,9 @@ class ScatterSmallUAV(AbstractUpdatableItem):
         self.plot_item.set_data(np.random.rand(0, 2))
 
     def update(self):
-        n = 10000
+        n = 50000
         pos = np.random.rand(n, 2)
-        self.plot_item.set_data(pos, symbol=">", size=15, face_color='blue')
+        self.plot_item.set_data(pos, symbol="o", size=15, face_color='blue')
 
     def reset_calls_to_zero(self):
         pass
@@ -56,9 +56,9 @@ class ScatterMediumUAV(AbstractUpdatableItem):
         self.plot_item.set_data(np.random.rand(0, 2))
 
     def update(self):
-        n = 10000
+        n = 50000
         pos = np.random.rand(n, 2)
-        self.plot_item.set_data(pos, symbol=">", size=10, face_color=(0.2, 0.3, 0.6, 0.5))
+        self.plot_item.set_data(pos, symbol="o", size=10, face_color='red')
 
     def reset_calls_to_zero(self):
         pass
@@ -71,9 +71,9 @@ class ScatterLargeUAV(AbstractUpdatableItem):
         self.plot_item.set_gl_state("translucent", blend=True, depth_test=True)
 
     def update(self):
-        n = 10000
+        n = 50000
         pos = np.random.rand(n, 2)
-        self.plot_item.set_data(pos, symbol=">", size=15, face_color=(0.2, 0.6, 0.3, 0.5))
+        self.plot_item.set_data(pos, symbol="o", size=15, face_color='green')
 
     def clear(self):
         self.plot_item.set_data(np.random.rand(0, 2))
