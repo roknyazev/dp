@@ -4,8 +4,8 @@ from typing import List
 
 class Graph:
     def __init__(self):
-        nodes_df = pd.read_csv('graph_data/variant4/nodes.csv').dropna()
-        edges_df = pd.read_csv('graph_data/variant4/edges.csv').dropna()
+        nodes_df = pd.read_csv('graph_data/variant6/nodes.csv').dropna()
+        edges_df = pd.read_csv('graph_data/variant6/edges.csv').dropna()
         nodes_tuple = tuple(zip(range(len(nodes_df)),
                                 nodes_df['type'],
                                 nodes_df['x'],

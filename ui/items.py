@@ -7,6 +7,7 @@ from vispy.visuals.transforms import MatrixTransform
 import networkx as nx
 from vispy.visuals.graphs import layouts
 from vispy.visuals.line.line import LineVisual
+import seaborn
 
 
 # 'disc', 'arrow', 'ring', 'clobber', 'square', 'diamond', 'vbar', 'hbar',
@@ -38,7 +39,7 @@ class ScatterSmallUAV(AbstractUpdatableItem):
         self.plot_item.set_data(np.random.rand(0, 2))
 
     def update(self):
-        n = 50000
+        n = 10000
         pos = np.random.rand(n, 2)
         self.plot_item.set_data(pos, symbol="o", size=15, face_color='blue')
 
@@ -56,7 +57,7 @@ class ScatterMediumUAV(AbstractUpdatableItem):
         self.plot_item.set_data(np.random.rand(0, 2))
 
     def update(self):
-        n = 50000
+        n = 10000
         pos = np.random.rand(n, 2)
         self.plot_item.set_data(pos, symbol="o", size=10, face_color='red')
 
@@ -71,7 +72,7 @@ class ScatterLargeUAV(AbstractUpdatableItem):
         self.plot_item.set_gl_state("translucent", blend=True, depth_test=True)
 
     def update(self):
-        n = 50000
+        n = 10000
         pos = np.random.rand(n, 2)
         self.plot_item.set_data(pos, symbol="o", size=15, face_color='green')
 
@@ -108,62 +109,86 @@ class GraphItem(AbstractUpdatableItem):
         if self.calls == 0:
             self.calls += 1
 
+            line_palette = seaborn.color_palette('muted', 3)
+            scatter_palette = seaborn.color_palette('pastel', 3)
+
             line_small_coords = []
             for coord in graph.edges_coords(graph.get_small_edges()).values():
-                line_small_coords.append(coord[0])
-                line_small_coords.append(coord[1])
+                line_small_coords.append(list(coord[0]) + [-100])
+                line_small_coords.append(list(coord[1]) + [-100])
             self.line_small = scene.visuals.Line
             self.line_small = self.line_small(parent=self.parent)
-            self.line_small.set_data(pos=np.array(line_small_coords), connect='segments', color=(0.17, 0.62, 0.43, 0.2))
+            self.line_small.set_gl_state("translucent", depth_test=False)
+            self.line_small.set_data(pos=np.array(line_small_coords),
+                                     connect='segments',
+                                     color=list(line_palette[0]) + [0.1],
+                                     width=1)
 
             line_medium_coords = []
             for coord in graph.edges_coords(graph.get_medium_edges()).values():
-                line_medium_coords.append(coord[0])
-                line_medium_coords.append(coord[1])
+                line_medium_coords.append(list(coord[0]) + [-100])
+                line_medium_coords.append(list(coord[1]) + [-100])
             self.line_medium = scene.visuals.Line
-            self.line_medium = self.line_medium(parent=self.parent, connect='segments', color=(0.62, 0.57, 0.17, 0.2))
-            self.line_medium.set_data(pos=np.array(line_medium_coords))
+            self.line_medium = self.line_medium(parent=self.parent)
+            self.line_medium.set_gl_state("translucent", depth_test=False)
+            self.line_medium.set_data(pos=np.array(line_medium_coords),
+                                      connect='segments',
+                                      color=list(line_palette[1]) + [0.1],
+                                      width=2)
 
             line_large_coords = []
             for coord in graph.edges_coords(graph.get_large_edges()).values():
-                line_large_coords.append(coord[0])
-                line_large_coords.append(coord[1])
+                line_large_coords.append(list(coord[0]) + [-100])
+                line_large_coords.append(list(coord[1]) + [-100])
             self.line_large = scene.visuals.Line
-            self.line_large = self.line_large(parent=self.parent, connect='segments', color=(0.62, 0.22, 0.17, 0.2))
-            self.line_large.set_data(pos=np.array(line_large_coords))
+            self.line_large = self.line_large(parent=self.parent)
+            self.line_large.set_gl_state("translucent", depth_test=False)
+            self.line_large.set_data(pos=np.array(line_large_coords),
+                                     connect='segments',
+                                     color=list(line_palette[2]) + [0.1],
+                                     width=4)
 
             node_small_coords = []
             for node in graph.get_small_nodes().values():
-                node_small_coords.append((node['x'], node['y']))
+                node_small_coords.append((node['x'], node['y'], 100))
             self.scatter_small = scene.visuals.create_visual_node(visuals.MarkersVisual)
             self.scatter_small = self.scatter_small(parent=self.parent)
+
+            self.scatter_small.set_gl_state("translucent", depth_test=False)
+
             self.scatter_small.set_data(pos=np.array(node_small_coords),
                                         symbol='o',
-                                        face_color=(0.17, 0.62, 0.43, 1),
-                                        edge_color=(0.17, 0.62, 0.43, 1),
-                                        size=5)
+                                        face_color=list(scatter_palette[0]) + [1.],
+                                        edge_color=list(scatter_palette[0]) + [1.],
+                                        size=1)
 
             node_medium_coords = []
             for node in graph.get_medium_nodes().values():
-                node_medium_coords.append((node['x'], node['y']))
+                node_medium_coords.append((node['x'], node['y'], 100))
             self.scatter_medium = scene.visuals.create_visual_node(visuals.MarkersVisual)
             self.scatter_medium = self.scatter_medium(parent=self.parent)
+
+            self.scatter_medium.set_gl_state("translucent", depth_test=False)
+
             self.scatter_medium.set_data(pos=np.array(node_medium_coords),
                                          symbol='o',
-                                         face_color=(0.62, 0.57, 0.17, 1),
-                                         edge_color=(0.62, 0.57, 0.17, 1),
-                                         size=10)
+                                         face_color=list(scatter_palette[1]) + [1.],
+                                         edge_color=list(scatter_palette[1]) + [1.],
+                                         size=2)
 
             node_large_coords = []
             for node in graph.get_large_nodes().values():
-                node_large_coords.append((node['x'], node['y']))
+                node_large_coords.append((node['x'], node['y'], 100))
             self.scatter_large = scene.visuals.create_visual_node(visuals.MarkersVisual)
+
             self.scatter_large = self.scatter_large(parent=self.parent)
+            self.scatter_large.set_gl_state("translucent", depth_test=False)
+
             self.scatter_large.set_data(pos=np.array(node_large_coords),
                                         symbol='o',
-                                        face_color=(0.62, 0.22, 0.17, 1),
-                                        edge_color=(0.62, 0.22, 0.17, 1),
-                                        size=15)
+                                        face_color=list(scatter_palette[2]) + [1.],
+                                        edge_color=list(scatter_palette[2]) + [1.],
+                                        size=4)
 
     def reset_calls_to_zero(self):
         self.calls = 0
