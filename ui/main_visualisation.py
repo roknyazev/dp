@@ -2,11 +2,13 @@ import time
 
 from PyQt5.QtCore import QTimer
 from vispy import scene
+from ui.items import AbstractUpdatableItem
+from typing import List
 
 
 class MainVisualization(scene.SceneCanvas):
     def __init__(self, width, height, items):
-        scene.SceneCanvas.__init__(self, keys=None)
+        scene.SceneCanvas.__init__(self, keys=None, vsync=True)
 
         self.size = width, height
         self.unfreeze()
@@ -15,7 +17,7 @@ class MainVisualization(scene.SceneCanvas):
                                                aspect=1.0)
 
         self.items_classes = items
-        self.items = []
+        self.items: List[AbstractUpdatableItem] = []
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_view)
@@ -27,6 +29,9 @@ class MainVisualization(scene.SceneCanvas):
                                            anchor_x='left',
                                            parent=self.view,
                                            pos=(20, 30))
+
+        for item_class in self.items_classes:
+            self.items.append(item_class(self.view.scene))
 
     def update_view(self):
         if self.call_counter == 0:
@@ -42,8 +47,8 @@ class MainVisualization(scene.SceneCanvas):
             self.call_counter = 0
 
     def start(self, dt=0):
-        for item_class in self.items_classes:
-            self.items.append(item_class(self.view.scene))
+        for item in self.items:
+            item.reset_calls_to_zero()
         self.timer.start(dt)
 
     def stop(self):

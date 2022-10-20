@@ -1,13 +1,11 @@
-import pyqtgraph as pg
 from abc import abstractmethod
-from graph.graph import graph
+
 import numpy as np
+import seaborn
 from vispy import scene, visuals
 from vispy.visuals.transforms import MatrixTransform
-import networkx as nx
-from vispy.visuals.graphs import layouts
-from vispy.visuals.line.line import LineVisual
-import seaborn
+
+from graph.graph import graph
 
 
 # 'disc', 'arrow', 'ring', 'clobber', 'square', 'diamond', 'vbar', 'hbar',
@@ -90,20 +88,37 @@ class GraphItem(AbstractUpdatableItem):
         scatter = scene.visuals.create_visual_node(visuals.MarkersVisual)
         self.plot_item = scatter(parent=parent)
 
-        self.line_small = None
-        self.line_medium = None
-        self.line_large = None
-        self.scatter_small = None
-        self.scatter_medium = None
-        self.scatter_large = None
+        self.line_small = scene.visuals.Line
+        self.line_small = self.line_small(parent=self.parent)
+        self.line_small.set_gl_state("translucent", depth_test=False)
+
+        self.line_medium = scene.visuals.Line
+        self.line_medium = self.line_medium(parent=self.parent)
+        self.line_medium.set_gl_state("translucent", depth_test=False)
+
+        self.line_large = scene.visuals.Line
+        self.line_large = self.line_large(parent=self.parent)
+        self.line_large.set_gl_state("translucent", depth_test=False)
+
+        self.scatter_small = scene.visuals.create_visual_node(visuals.MarkersVisual)
+        self.scatter_small = self.scatter_small(parent=self.parent)
+        self.scatter_small.set_gl_state("translucent", depth_test=False)
+
+        self.scatter_medium = scene.visuals.create_visual_node(visuals.MarkersVisual)
+        self.scatter_medium = self.scatter_medium(parent=self.parent)
+        self.scatter_medium.set_gl_state("translucent", depth_test=False)
+
+        self.scatter_large = scene.visuals.create_visual_node(visuals.MarkersVisual)
+        self.scatter_large = self.scatter_large(parent=self.parent)
+        self.scatter_large.set_gl_state("translucent", depth_test=False)
 
     def clear(self):
-        self.line_small.set_data(np.random.rand(0, 2))
-        self.line_medium.set_data(np.random.rand(0, 2))
-        self.line_large.set_data(np.random.rand(0, 2))
-        self.scatter_small.set_data(np.random.rand(0, 2))
-        self.scatter_medium.set_data(np.random.rand(0, 2))
-        self.scatter_large.set_data(np.random.rand(0, 2))
+        self.line_small.set_data(np.random.rand(0, 3))
+        self.line_medium.set_data(np.random.rand(0, 3))
+        self.line_large.set_data(np.random.rand(0, 3))
+        self.scatter_small.set_data(np.random.rand(0, 3))
+        self.scatter_medium.set_data(np.random.rand(0, 3))
+        self.scatter_large.set_data(np.random.rand(0, 3))
 
     def update(self):
         if self.calls == 0:
@@ -116,9 +131,6 @@ class GraphItem(AbstractUpdatableItem):
             for coord in graph.edges_coords(graph.get_small_edges()).values():
                 line_small_coords.append(list(coord[0]) + [-100])
                 line_small_coords.append(list(coord[1]) + [-100])
-            self.line_small = scene.visuals.Line
-            self.line_small = self.line_small(parent=self.parent)
-            self.line_small.set_gl_state("translucent", depth_test=False)
             self.line_small.set_data(pos=np.array(line_small_coords),
                                      connect='segments',
                                      color=list(line_palette[0]) + [0.1],
@@ -128,9 +140,6 @@ class GraphItem(AbstractUpdatableItem):
             for coord in graph.edges_coords(graph.get_medium_edges()).values():
                 line_medium_coords.append(list(coord[0]) + [-100])
                 line_medium_coords.append(list(coord[1]) + [-100])
-            self.line_medium = scene.visuals.Line
-            self.line_medium = self.line_medium(parent=self.parent)
-            self.line_medium.set_gl_state("translucent", depth_test=False)
             self.line_medium.set_data(pos=np.array(line_medium_coords),
                                       connect='segments',
                                       color=list(line_palette[1]) + [0.1],
@@ -140,9 +149,6 @@ class GraphItem(AbstractUpdatableItem):
             for coord in graph.edges_coords(graph.get_large_edges()).values():
                 line_large_coords.append(list(coord[0]) + [-100])
                 line_large_coords.append(list(coord[1]) + [-100])
-            self.line_large = scene.visuals.Line
-            self.line_large = self.line_large(parent=self.parent)
-            self.line_large.set_gl_state("translucent", depth_test=False)
             self.line_large.set_data(pos=np.array(line_large_coords),
                                      connect='segments',
                                      color=list(line_palette[2]) + [0.1],
@@ -151,11 +157,6 @@ class GraphItem(AbstractUpdatableItem):
             node_small_coords = []
             for node in graph.get_small_nodes().values():
                 node_small_coords.append((node['x'], node['y'], 100))
-            self.scatter_small = scene.visuals.create_visual_node(visuals.MarkersVisual)
-            self.scatter_small = self.scatter_small(parent=self.parent)
-
-            self.scatter_small.set_gl_state("translucent", depth_test=False)
-
             self.scatter_small.set_data(pos=np.array(node_small_coords),
                                         symbol='o',
                                         face_color=list(scatter_palette[0]) + [1.],
@@ -165,11 +166,6 @@ class GraphItem(AbstractUpdatableItem):
             node_medium_coords = []
             for node in graph.get_medium_nodes().values():
                 node_medium_coords.append((node['x'], node['y'], 100))
-            self.scatter_medium = scene.visuals.create_visual_node(visuals.MarkersVisual)
-            self.scatter_medium = self.scatter_medium(parent=self.parent)
-
-            self.scatter_medium.set_gl_state("translucent", depth_test=False)
-
             self.scatter_medium.set_data(pos=np.array(node_medium_coords),
                                          symbol='o',
                                          face_color=list(scatter_palette[1]) + [1.],
@@ -179,11 +175,6 @@ class GraphItem(AbstractUpdatableItem):
             node_large_coords = []
             for node in graph.get_large_nodes().values():
                 node_large_coords.append((node['x'], node['y'], 100))
-            self.scatter_large = scene.visuals.create_visual_node(visuals.MarkersVisual)
-
-            self.scatter_large = self.scatter_large(parent=self.parent)
-            self.scatter_large.set_gl_state("translucent", depth_test=False)
-
             self.scatter_large.set_data(pos=np.array(node_large_coords),
                                         symbol='o',
                                         face_color=list(scatter_palette[2]) + [1.],
@@ -194,4 +185,4 @@ class GraphItem(AbstractUpdatableItem):
         self.calls = 0
 
 
-all_items = [ScatterLargeUAV, ScatterMediumUAV, ScatterSmallUAV, GraphItem, GraphItem]
+all_items = [ScatterLargeUAV, ScatterMediumUAV, ScatterSmallUAV, GraphItem]
