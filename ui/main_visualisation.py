@@ -13,8 +13,10 @@ class MainVisualization(scene.SceneCanvas):
         self.size = width, height
         self.unfreeze()
         self.view = self.central_widget.add_view()
-        self.view.camera = scene.PanZoomCamera(rect=(90, 50, 10, 10),
-                                               aspect=1.0)
+        # self.view.camera = scene.PanZoomCamera(rect=(90, 50, 10, 10),
+        #                                        aspect=1.0)
+        self.view.camera = scene.cameras.fly.FlyCamera(fov=60)
+        self.view.camera.center = 90, 50, 0
 
         self.items_classes = items
         self.items: List[AbstractUpdatableItem] = []

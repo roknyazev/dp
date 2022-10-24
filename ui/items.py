@@ -6,6 +6,8 @@ from vispy import scene, visuals
 from vispy.visuals.transforms import MatrixTransform
 
 from graph.graph import graph
+import config as cfg
+from itertools import chain
 
 
 # 'disc', 'arrow', 'ring', 'clobber', 'square', 'diamond', 'vbar', 'hbar',
@@ -111,6 +113,8 @@ class GraphItem(AbstractUpdatableItem):
         self.scatter_large = scene.visuals.create_visual_node(visuals.MarkersVisual)
         self.scatter_large = self.scatter_large(parent=self.parent)
         self.scatter_large.set_gl_state("translucent", depth_test=False)
+        self.line_palette = seaborn.color_palette('muted', 3)
+        self.scatter_palette = seaborn.color_palette('pastel', 3)
 
     def clear(self):
         self.line_small.set_data(np.random.rand(0, 3))
@@ -124,65 +128,213 @@ class GraphItem(AbstractUpdatableItem):
         if self.calls == 0:
             self.calls += 1
 
-            line_palette = seaborn.color_palette('muted', 3)
-            scatter_palette = seaborn.color_palette('pastel', 3)
-
             line_small_coords = []
-            for coord in graph.edges_coords(graph.get_small_edges()).values():
-                line_small_coords.append(list(coord[0]) + [-100])
-                line_small_coords.append(list(coord[1]) + [-100])
+            for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_small_edges()).values():
+                line_small_coords.append(list(node1_coord) + [-1])
+                line_small_coords.append(list(node2_coord) + [-1])
             self.line_small.set_data(pos=np.array(line_small_coords),
                                      connect='segments',
-                                     color=list(line_palette[0]) + [0.1],
+                                     color=list(self.line_palette[0]) + [0.1],
                                      width=1)
 
             line_medium_coords = []
-            for coord in graph.edges_coords(graph.get_medium_edges()).values():
-                line_medium_coords.append(list(coord[0]) + [-100])
-                line_medium_coords.append(list(coord[1]) + [-100])
+            for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_medium_edges()).values():
+                line_medium_coords.append(list(node1_coord) + [-1])
+                line_medium_coords.append(list(node2_coord) + [-1])
             self.line_medium.set_data(pos=np.array(line_medium_coords),
                                       connect='segments',
-                                      color=list(line_palette[1]) + [0.1],
+                                      color=list(self.line_palette[1]) + [0.1],
                                       width=2)
 
             line_large_coords = []
-            for coord in graph.edges_coords(graph.get_large_edges()).values():
-                line_large_coords.append(list(coord[0]) + [-100])
-                line_large_coords.append(list(coord[1]) + [-100])
+            for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_large_edges()).values():
+                line_large_coords.append(list(node1_coord) + [-1])
+                line_large_coords.append(list(node2_coord) + [-1])
             self.line_large.set_data(pos=np.array(line_large_coords),
                                      connect='segments',
-                                     color=list(line_palette[2]) + [0.1],
+                                     color=list(self.line_palette[2]) + [0.1],
                                      width=4)
 
             node_small_coords = []
             for node in graph.get_small_nodes().values():
-                node_small_coords.append((node['x'], node['y'], 100))
+                node_small_coords.append((node['x'], node['y'], 1))
             self.scatter_small.set_data(pos=np.array(node_small_coords),
                                         symbol='o',
-                                        face_color=list(scatter_palette[0]) + [1.],
-                                        edge_color=list(scatter_palette[0]) + [1.],
+                                        face_color=list(self.scatter_palette[0]) + [1.],
+                                        edge_color=list(self.scatter_palette[0]) + [1.],
                                         size=1)
 
             node_medium_coords = []
             for node in graph.get_medium_nodes().values():
-                node_medium_coords.append((node['x'], node['y'], 100))
+                node_medium_coords.append((node['x'], node['y'], 1))
             self.scatter_medium.set_data(pos=np.array(node_medium_coords),
                                          symbol='o',
-                                         face_color=list(scatter_palette[1]) + [1.],
-                                         edge_color=list(scatter_palette[1]) + [1.],
+                                         face_color=list(self.scatter_palette[1]) + [1.],
+                                         edge_color=list(self.scatter_palette[1]) + [1.],
                                          size=2)
 
             node_large_coords = []
             for node in graph.get_large_nodes().values():
-                node_large_coords.append((node['x'], node['y'], 100))
+                node_large_coords.append((node['x'], node['y'], 1))
             self.scatter_large.set_data(pos=np.array(node_large_coords),
                                         symbol='o',
-                                        face_color=list(scatter_palette[2]) + [1.],
-                                        edge_color=list(scatter_palette[2]) + [1.],
+                                        face_color=list(self.scatter_palette[2]) + [1.],
+                                        edge_color=list(self.scatter_palette[2]) + [1.],
                                         size=4)
 
     def reset_calls_to_zero(self):
         self.calls = 0
 
 
-all_items = [ScatterLargeUAV, ScatterMediumUAV, ScatterSmallUAV, GraphItem]
+class Graph3dItem(GraphItem):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.layers = 10
+
+        self.v_line_small = scene.visuals.Line
+        self.v_line_small = self.v_line_small(parent=self.parent)
+        self.v_line_small.set_gl_state("translucent", depth_test=False)
+
+        self.v_line_medium = scene.visuals.Line
+        self.v_line_medium = self.v_line_medium(parent=self.parent)
+        self.v_line_medium.set_gl_state("translucent", depth_test=False)
+
+        self.v_line_large = scene.visuals.Line
+        self.v_line_large = self.v_line_large(parent=self.parent)
+        self.v_line_large.set_gl_state("translucent", depth_test=False)
+
+    @staticmethod
+    def calc_layer(period_index: int):
+        line_small_coords = []
+        for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_small_edges()).values():
+            line_small_coords.append(list(node1_coord) + [period_index * cfg.period_small])
+            line_small_coords.append(list(node2_coord) + [period_index * cfg.period_small + distance / cfg.vel_small])
+
+            line_small_coords.append(list(node1_coord) + [period_index * cfg.period_small + distance / cfg.vel_small])
+            line_small_coords.append(list(node2_coord) + [period_index * cfg.period_small])
+
+        line_medium_coords = []
+        for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_medium_edges()).values():
+            line_medium_coords.append(list(node1_coord) + [period_index * cfg.period_medium])
+            line_medium_coords.append(
+                list(node2_coord) + [period_index * cfg.period_medium + distance / cfg.vel_medium])
+
+            line_medium_coords.append(
+                list(node1_coord) + [period_index * cfg.period_medium + distance / cfg.vel_medium])
+            line_medium_coords.append(
+                list(node2_coord) + [period_index * cfg.period_medium])
+
+        line_large_coords = []
+        for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_large_edges()).values():
+            line_large_coords.append(list(node1_coord) + [period_index * cfg.period_large])
+            line_large_coords.append(list(node2_coord) + [period_index * cfg.period_large + distance / cfg.vel_large])
+
+            line_large_coords.append(list(node1_coord) + [period_index * cfg.period_large + distance / cfg.vel_large])
+            line_large_coords.append(list(node2_coord) + [period_index * cfg.period_large])
+
+        node_small_coords = []
+        for node in graph.get_small_nodes().values():
+            node_small_coords.append((node['x'], node['y'], period_index * cfg.period_small))
+
+        node_medium_coords = []
+        for node in graph.get_medium_nodes().values():
+            node_medium_coords.append((node['x'], node['y'], period_index * cfg.period_medium))
+
+        node_large_coords = []
+        for node in graph.get_large_nodes().values():
+            node_large_coords.append((node['x'], node['y'], period_index * cfg.period_large))
+        return line_small_coords, \
+               line_medium_coords, \
+               line_large_coords, \
+               node_small_coords, \
+               node_medium_coords, \
+               node_large_coords
+
+    def update(self):
+        if self.calls == 0:
+            self.calls += 1
+            line_small_coords = []
+            line_medium_coords = []
+            line_large_coords = []
+            node_small_coords = []
+            node_medium_coords = []
+            node_large_coords = []
+            for i in range(self.layers):
+                layer = self.calc_layer(i)
+                line_small_coords.append(layer[0])
+                line_medium_coords.append(layer[1])
+                line_large_coords.append(layer[2])
+                node_small_coords.append(layer[3])
+                node_medium_coords.append(layer[4])
+                node_large_coords.append(layer[5])
+            line_small_coords = list(chain(*line_small_coords))
+            line_medium_coords = list(chain(*line_medium_coords))
+            line_large_coords = list(chain(*line_large_coords))
+            node_small_coords = list(chain(*node_small_coords))
+            node_medium_coords = list(chain(*node_medium_coords))
+            node_large_coords = list(chain(*node_large_coords))
+            self.line_small.set_data(pos=np.array(line_small_coords),
+                                     connect='segments',
+                                     color=list(self.line_palette[0]) + [1],
+                                     width=1)
+            self.line_medium.set_data(pos=np.array(line_medium_coords),
+                                      connect='segments',
+                                      color=list(self.line_palette[1]) + [1],
+                                      width=1)
+            self.line_large.set_data(pos=np.array(line_large_coords),
+                                     connect='segments',
+                                     color=list(self.line_palette[2]) + [1],
+                                     width=1)
+            self.scatter_small.set_data(pos=np.array(node_small_coords),
+                                        symbol='o',
+                                        face_color=list(self.scatter_palette[0]) + [1.],
+                                        edge_color=list(self.scatter_palette[0]) + [1.],
+                                        size=1)
+            self.scatter_medium.set_data(pos=np.array(node_medium_coords),
+                                         symbol='o',
+                                         face_color=list(self.scatter_palette[1]) + [1.],
+                                         edge_color=list(self.scatter_palette[1]) + [1.],
+                                         size=1)
+            self.scatter_large.set_data(pos=np.array(node_large_coords),
+                                        symbol='o',
+                                        face_color=list(self.scatter_palette[2]) + [1.],
+                                        edge_color=list(self.scatter_palette[2]) + [1.],
+                                        size=1)
+
+            v_lines_points1 = self.calc_layer(0)[3:]
+            v_lines_points2 = self.calc_layer(self.layers)[3:]
+            v_lines_small_coords = []
+            v_lines_medium_coords = []
+            v_lines_large_coords = []
+            for i in range(len(v_lines_points1[0])):
+                v_lines_small_coords.append(v_lines_points1[0][i])
+                v_lines_small_coords.append(v_lines_points2[0][i])
+            for i in range(len(v_lines_points1[1])):
+                v_lines_medium_coords.append(v_lines_points1[1][i])
+                v_lines_medium_coords.append(v_lines_points2[1][i])
+            for i in range(len(v_lines_points1[2])):
+                v_lines_large_coords.append(v_lines_points1[2][i])
+                v_lines_large_coords.append(v_lines_points2[2][i])
+
+            self.v_line_small.set_data(pos=np.array(v_lines_small_coords),
+                                       connect='segments',
+                                       color=list(self.line_palette[0]) + [0.4],
+                                       width=1)
+            self.v_line_medium.set_data(pos=np.array(v_lines_medium_coords),
+                                        connect='segments',
+                                        color=list(self.line_palette[1]) + [0.4],
+                                        width=1)
+            self.v_line_large.set_data(pos=np.array(v_lines_large_coords),
+                                       connect='segments',
+                                       color=list(self.line_palette[2]) + [0.4],
+                                       width=1)
+
+    def clear(self):
+        super().clear()
+
+    def reset_calls_to_zero(self):
+        super().reset_calls_to_zero()
+
+
+all_items = [ScatterLargeUAV, ScatterMediumUAV, ScatterSmallUAV, Graph3dItem]

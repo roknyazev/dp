@@ -1,10 +1,12 @@
 import pandas as pd
 
+# 4, 6
+
 
 class Graph:
     def __init__(self):
-        nodes_df = pd.read_csv('graph_data/variant6/nodes.csv').dropna()
-        edges_df = pd.read_csv('graph_data/variant6/edges.csv').dropna()
+        nodes_df = pd.read_csv('graph_data/variant4/nodes.csv').dropna()
+        edges_df = pd.read_csv('graph_data/variant4/edges.csv').dropna()
         nodes_tuple = tuple(zip(range(len(nodes_df)),
                                 nodes_df['type'],
                                 nodes_df['x'],
@@ -55,7 +57,8 @@ class Graph:
             node1 = edge[1]['node1']
             node2 = edge[1]['node2']
             coords = ((self.nodes_dict[node1]['x'], self.nodes_dict[node1]['y']),
-                      (self.nodes_dict[node2]['x'], self.nodes_dict[node2]['y']))
+                      (self.nodes_dict[node2]['x'], self.nodes_dict[node2]['y']),
+                      edge[1]['weight'])
             result[edge[0]] = coords
         return result
 

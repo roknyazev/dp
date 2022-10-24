@@ -2,6 +2,10 @@ from logistics.models.orders import ReceivedOrderModel, ScheduledOrderModel
 import logistics.context as context
 
 
+async def calc_path(node1: int, node2: int):
+    pass
+
+
 async def schedule(received_order: ReceivedOrderModel) -> bool:
     received_order_id = context.order_count
     context.order_count += 1
