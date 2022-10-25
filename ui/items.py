@@ -130,8 +130,8 @@ class GraphItem(AbstractUpdatableItem):
 
             line_small_coords = []
             for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_small_edges()).values():
-                line_small_coords.append(list(node1_coord) + [-1])
-                line_small_coords.append(list(node2_coord) + [-1])
+                line_small_coords.append(list(node1_coord) + [-10])
+                line_small_coords.append(list(node2_coord) + [-10])
             self.line_small.set_data(pos=np.array(line_small_coords),
                                      connect='segments',
                                      color=list(self.line_palette[0]) + [0.1],
@@ -139,8 +139,8 @@ class GraphItem(AbstractUpdatableItem):
 
             line_medium_coords = []
             for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_medium_edges()).values():
-                line_medium_coords.append(list(node1_coord) + [-1])
-                line_medium_coords.append(list(node2_coord) + [-1])
+                line_medium_coords.append(list(node1_coord) + [-10])
+                line_medium_coords.append(list(node2_coord) + [-10])
             self.line_medium.set_data(pos=np.array(line_medium_coords),
                                       connect='segments',
                                       color=list(self.line_palette[1]) + [0.1],
@@ -148,8 +148,8 @@ class GraphItem(AbstractUpdatableItem):
 
             line_large_coords = []
             for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_large_edges()).values():
-                line_large_coords.append(list(node1_coord) + [-1])
-                line_large_coords.append(list(node2_coord) + [-1])
+                line_large_coords.append(list(node1_coord) + [-10])
+                line_large_coords.append(list(node2_coord) + [-10])
             self.line_large.set_data(pos=np.array(line_large_coords),
                                      connect='segments',
                                      color=list(self.line_palette[2]) + [0.1],
@@ -157,7 +157,7 @@ class GraphItem(AbstractUpdatableItem):
 
             node_small_coords = []
             for node in graph.get_small_nodes().values():
-                node_small_coords.append((node['x'], node['y'], 1))
+                node_small_coords.append((node['x'], node['y'], -10))
             self.scatter_small.set_data(pos=np.array(node_small_coords),
                                         symbol='o',
                                         face_color=list(self.scatter_palette[0]) + [1.],
@@ -166,7 +166,7 @@ class GraphItem(AbstractUpdatableItem):
 
             node_medium_coords = []
             for node in graph.get_medium_nodes().values():
-                node_medium_coords.append((node['x'], node['y'], 1))
+                node_medium_coords.append((node['x'], node['y'], -10))
             self.scatter_medium.set_data(pos=np.array(node_medium_coords),
                                          symbol='o',
                                          face_color=list(self.scatter_palette[1]) + [1.],
@@ -175,7 +175,7 @@ class GraphItem(AbstractUpdatableItem):
 
             node_large_coords = []
             for node in graph.get_large_nodes().values():
-                node_large_coords.append((node['x'], node['y'], 1))
+                node_large_coords.append((node['x'], node['y'], -10))
             self.scatter_large.set_data(pos=np.array(node_large_coords),
                                         symbol='o',
                                         face_color=list(self.scatter_palette[2]) + [1.],
@@ -190,7 +190,22 @@ class Graph3dItem(GraphItem):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.layers = 10
+        self.layers_count = 15
+
+        self.line_small.parent = None
+        self.line_small = scene.visuals.Arrow
+        self.line_small = self.line_small(parent=self.parent)
+        self.line_small.set_gl_state("translucent", depth_test=False)
+
+        self.line_medium.parent = None
+        self.line_medium = scene.visuals.Arrow
+        self.line_medium = self.line_medium(parent=self.parent)
+        self.line_medium.set_gl_state("translucent", depth_test=False)
+
+        self.line_large.parent = None
+        self.line_large = scene.visuals.Arrow
+        self.line_large = self.line_large(parent=self.parent)
+        self.line_large.set_gl_state("translucent", depth_test=False)
 
         self.v_line_small = scene.visuals.Line
         self.v_line_small = self.v_line_small(parent=self.parent)
@@ -204,52 +219,61 @@ class Graph3dItem(GraphItem):
         self.v_line_large = self.v_line_large(parent=self.parent)
         self.v_line_large.set_gl_state("translucent", depth_test=False)
 
-    @staticmethod
-    def calc_layer(period_index: int):
-        line_small_coords = []
-        for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_small_edges()).values():
-            line_small_coords.append(list(node1_coord) + [period_index * cfg.period_small])
-            line_small_coords.append(list(node2_coord) + [period_index * cfg.period_small + distance / cfg.vel_small])
+        self.max_height = self.layers_count * cfg.period_small
 
-            line_small_coords.append(list(node1_coord) + [period_index * cfg.period_small + distance / cfg.vel_small])
-            line_small_coords.append(list(node2_coord) + [period_index * cfg.period_small])
+    def calc_layer(self, period_index: int):
+        line_small_coords = []
+
+        for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_small_edges()).values():
+            start_height = period_index * cfg.period_small
+            end_height = start_height + distance / cfg.vel_small
+            line_small_coords.append(list(node1_coord) + [start_height])
+            line_small_coords.append(list(node2_coord) + [end_height])
+
+            line_small_coords.append(list(node1_coord) + [end_height])
+            line_small_coords.append(list(node2_coord) + [start_height])
 
         line_medium_coords = []
         for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_medium_edges()).values():
-            line_medium_coords.append(list(node1_coord) + [period_index * cfg.period_medium])
-            line_medium_coords.append(
-                list(node2_coord) + [period_index * cfg.period_medium + distance / cfg.vel_medium])
+            start_height = period_index * cfg.period_medium
+            end_height = start_height + distance / cfg.vel_medium
+            if start_height < self.max_height:
+                line_medium_coords.append(list(node1_coord) + [start_height])
+                line_medium_coords.append(list(node2_coord) + [end_height])
 
-            line_medium_coords.append(
-                list(node1_coord) + [period_index * cfg.period_medium + distance / cfg.vel_medium])
-            line_medium_coords.append(
-                list(node2_coord) + [period_index * cfg.period_medium])
+                line_medium_coords.append(list(node1_coord) + [end_height])
+                line_medium_coords.append(list(node2_coord) + [start_height])
 
         line_large_coords = []
         for node1_coord, node2_coord, distance in graph.edges_coords(graph.get_large_edges()).values():
-            line_large_coords.append(list(node1_coord) + [period_index * cfg.period_large])
-            line_large_coords.append(list(node2_coord) + [period_index * cfg.period_large + distance / cfg.vel_large])
+            start_height = period_index * cfg.period_large
+            end_height = start_height + distance / cfg.vel_large
+            if start_height < self.max_height:
+                line_large_coords.append(list(node1_coord) + [start_height])
+                line_large_coords.append(list(node2_coord) + [end_height])
 
-            line_large_coords.append(list(node1_coord) + [period_index * cfg.period_large + distance / cfg.vel_large])
-            line_large_coords.append(list(node2_coord) + [period_index * cfg.period_large])
+                line_large_coords.append(list(node1_coord) + [end_height])
+                line_large_coords.append(list(node2_coord) + [start_height])
 
         node_small_coords = []
         for node in graph.get_small_nodes().values():
-            node_small_coords.append((node['x'], node['y'], period_index * cfg.period_small))
+            height = period_index * cfg.period_small
+            if height < self.max_height:
+                node_small_coords.append((node['x'], node['y'], height))
 
         node_medium_coords = []
         for node in graph.get_medium_nodes().values():
-            node_medium_coords.append((node['x'], node['y'], period_index * cfg.period_medium))
+            height = period_index * cfg.period_medium
+            if height < self.max_height:
+                node_medium_coords.append((node['x'], node['y'], height))
 
         node_large_coords = []
         for node in graph.get_large_nodes().values():
-            node_large_coords.append((node['x'], node['y'], period_index * cfg.period_large))
-        return line_small_coords, \
-               line_medium_coords, \
-               line_large_coords, \
-               node_small_coords, \
-               node_medium_coords, \
-               node_large_coords
+            height = period_index * cfg.period_large
+            if height < self.max_height:
+                node_large_coords.append((node['x'], node['y'], height))
+        return [line_small_coords, line_medium_coords, line_large_coords,
+                node_small_coords, node_medium_coords, node_large_coords]
 
     def update(self):
         if self.calls == 0:
@@ -260,7 +284,7 @@ class Graph3dItem(GraphItem):
             node_small_coords = []
             node_medium_coords = []
             node_large_coords = []
-            for i in range(self.layers):
+            for i in range(self.layers_count):
                 layer = self.calc_layer(i)
                 line_small_coords.append(layer[0])
                 line_medium_coords.append(layer[1])
@@ -303,19 +327,28 @@ class Graph3dItem(GraphItem):
                                         size=1)
 
             v_lines_points1 = self.calc_layer(0)[3:]
-            v_lines_points2 = self.calc_layer(self.layers)[3:]
             v_lines_small_coords = []
             v_lines_medium_coords = []
             v_lines_large_coords = []
             for i in range(len(v_lines_points1[0])):
-                v_lines_small_coords.append(v_lines_points1[0][i])
-                v_lines_small_coords.append(v_lines_points2[0][i])
+                point = list(v_lines_points1[0][i])
+                v_lines_small_coords.append(point[:])
+                point[2] = self.max_height
+                v_lines_small_coords.append(point[:])
+
             for i in range(len(v_lines_points1[1])):
-                v_lines_medium_coords.append(v_lines_points1[1][i])
-                v_lines_medium_coords.append(v_lines_points2[1][i])
+                point = list(v_lines_points1[1][i])
+                v_lines_medium_coords.append(point[:])
+                point[2] = self.max_height
+                v_lines_medium_coords.append(point[:])
+
             for i in range(len(v_lines_points1[2])):
-                v_lines_large_coords.append(v_lines_points1[2][i])
-                v_lines_large_coords.append(v_lines_points2[2][i])
+                point = list(v_lines_points1[2][i])
+                v_lines_large_coords.append(point[:])
+                point[2] = self.max_height
+                v_lines_large_coords.append(point[:])
+                # v_lines_large_coords.append(v_lines_points1[2][i])
+                # v_lines_large_coords.append(v_lines_points2[2][i])
 
             self.v_line_small.set_data(pos=np.array(v_lines_small_coords),
                                        connect='segments',
@@ -332,9 +365,12 @@ class Graph3dItem(GraphItem):
 
     def clear(self):
         super().clear()
+        self.v_line_small.set_data(np.random.rand(0, 3))
+        self.v_line_medium.set_data(np.random.rand(0, 3))
+        self.v_line_large.set_data(np.random.rand(0, 3))
 
     def reset_calls_to_zero(self):
         super().reset_calls_to_zero()
 
 
-all_items = [ScatterLargeUAV, ScatterMediumUAV, ScatterSmallUAV, Graph3dItem]
+all_items = [ScatterLargeUAV, ScatterMediumUAV, ScatterSmallUAV, Graph3dItem, GraphItem]
