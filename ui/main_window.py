@@ -13,6 +13,7 @@ class MainWindow(QMainWindow, Ui_Dialog, QtStyleTools):
         super().__init__()
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setupUi(self)
+        self.setStyleSheet('background: #252525')
 
         label = QLabel()
         self.gridLayout.addWidget(label)

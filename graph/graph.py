@@ -1,12 +1,14 @@
 import pandas as pd
+import networkx as nx
 
 # 4, 6
+variant = 4
 
 
 class Graph:
     def __init__(self):
-        nodes_df = pd.read_csv('graph_data/variant4/nodes.csv').dropna()
-        edges_df = pd.read_csv('graph_data/variant4/edges.csv').dropna()
+        nodes_df = pd.read_csv(f'graph_data/variant{variant}/nodes.csv').dropna()
+        edges_df = pd.read_csv(f'graph_data/variant{variant}/edges.csv').dropna()
         nodes_tuple = tuple(zip(range(len(nodes_df)),
                                 nodes_df['type'],
                                 nodes_df['x'],
@@ -25,7 +27,6 @@ class Graph:
                                             'weight',
                                             'min_type'], x[1:]))) for x in edges_tuple]
         self.edges_dict = dict(self.edges_dict)
-        pass
 
     def get_all_edges(self) -> dict:
         return self.edges_dict
@@ -64,3 +65,8 @@ class Graph:
 
 
 graph = Graph()
+
+
+class Graph3d:
+    def __init__(self):
+        self.graph2d = graph
