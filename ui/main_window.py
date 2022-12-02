@@ -1,6 +1,8 @@
-from PyQt5.QtWidgets import QMainWindow, QLabel
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+
 from ui.ui import Ui_Dialog
-from PyQt5.QtCore import Qt
 from ui.main_visualisation import *
 from qt_material import QtStyleTools
 import os
@@ -18,14 +20,17 @@ class MainWindow(QMainWindow, Ui_Dialog, QtStyleTools):
         label = QLabel()
         self.gridLayout.addWidget(label)
 
+        shortest_paths_mode_checkbox = QCheckBox()
+        shortest_paths_mode_checkbox.setText('K shortest paths')
+
+        self.horizontalLayout.addWidget(shortest_paths_mode_checkbox)
+
         self.main_view = MainVisualization(1529,
-                                           879, all_items)
+                                           879,
+                                           all_items,
+                                           shortest_paths_mode_checkbox)
         self.main_view.create_native()
         self.main_view.native.setParent(label)
-
-
-
-        print()
 
         self.startstopButton.clicked.connect(self.start_stop)
 
@@ -33,6 +38,13 @@ class MainWindow(QMainWindow, Ui_Dialog, QtStyleTools):
         self.pauseButton.setDisabled(True)
         self.stop_flag = False
         self.pause_flag = False
+
+
+        # first_node_edit = QLineEdit()
+        # second_node_edit = QLineEdit()
+        # self.horizontalLayout.addWidget(first_node_edit)
+        # self.horizontalLayout.addWidget(second_node_edit)
+
 
     def start_stop(self):
         self.start() if not self.stop_flag else self.stop()

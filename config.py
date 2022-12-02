@@ -9,3 +9,5 @@ period_large = 6
 capacity_small = 1
 capacity_medium = 3
 capacity_large = 6
+
+k_shortest = 20

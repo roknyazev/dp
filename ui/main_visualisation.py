@@ -1,23 +1,30 @@
 import time
 
-from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
 from vispy import scene
 from ui.items import AbstractUpdatableItem
 from typing import List
-
+import numpy as np
+from graph.graph import graph
+from logistics import k_shortest
+from collections import deque
 
 class MainVisualization(scene.SceneCanvas):
-    def __init__(self, width, height, items):
+    def __init__(self, width, height, items, shortest_paths_mode_checkbox: QCheckBox):
+        self.shortest_paths_mode_checkbox = shortest_paths_mode_checkbox
+
         scene.SceneCanvas.__init__(self, keys=None, vsync=True)
 
         self.size = width, height
         self.unfreeze()
         self.view = self.central_widget.add_view()
         self.bgcolor = '#151515'
-        # self.view.camera = scene.PanZoomCamera(rect=(90, 50, 10, 10),
-        #                                        aspect=1.0)
-        self.view.camera = scene.cameras.fly.FlyCamera(fov=60)
-        self.view.camera.center = 90, 50, 0
+
+        self.view.camera = scene.PanZoomCamera(rect=(90, 50, 10, 10),
+                                               aspect=1.0)
+        # self.view.camera = scene.cameras.fly.FlyCamera(fov=60)
+        # self.view.camera.center = 90, 50, 0
 
         self.items_classes = items
         self.items: List[AbstractUpdatableItem] = []
@@ -35,6 +42,9 @@ class MainVisualization(scene.SceneCanvas):
 
         for item_class in self.items_classes:
             self.items.append(item_class(self.view.scene))
+
+        self.node_pair = deque([1, 0], maxlen=2)
+        self.parity_flag = False
 
     def update_view(self):
         if self.call_counter == 0:
@@ -63,3 +73,17 @@ class MainVisualization(scene.SceneCanvas):
     def pause(self, pause_flag):
         self.timer.stop() if pause_flag else self.timer.start()
         self.fps_text.text = f'0 fps'
+
+    def on_mouse_press(self, event):
+        tr = self.scene.node_transform(self.view.scene)
+        pos = tr.map(event.pos)
+        nodes = graph.get_all_nodes()
+
+        if self.shortest_paths_mode_checkbox.isChecked() and event.button == 2:
+            closest = min(nodes.keys(), key=lambda key: sum((np.array([nodes[key]['x'], nodes[key]['y']]) -
+                                                         np.array([pos[0], pos[1]])) ** 2))
+
+            self.node_pair.append(closest)
+            k_shortest.highlight_k_shortest(*list(self.node_pair))
+
+

@@ -37,7 +37,7 @@ class Ui_Dialog(object):
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayoutWidget = QWidget(Dialog)
         self.horizontalLayoutWidget.setObjectName(u"horizontalLayoutWidget")
-        self.horizontalLayoutWidget.setGeometry(QRect(10, 910, 371, 81))
+        self.horizontalLayoutWidget.setGeometry(QRect(10, 910, 1871, 81))
         self.horizontalLayout = QHBoxLayout(self.horizontalLayoutWidget)
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
