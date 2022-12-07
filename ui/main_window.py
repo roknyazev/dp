@@ -39,12 +39,10 @@ class MainWindow(QMainWindow, Ui_Dialog, QtStyleTools):
         self.stop_flag = False
         self.pause_flag = False
 
-
         # first_node_edit = QLineEdit()
         # second_node_edit = QLineEdit()
         # self.horizontalLayout.addWidget(first_node_edit)
         # self.horizontalLayout.addWidget(second_node_edit)
-
 
     def start_stop(self):
         self.start() if not self.stop_flag else self.stop()

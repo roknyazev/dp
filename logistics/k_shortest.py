@@ -17,7 +17,7 @@ def highlight_k_shortest(node1, node2):
     store.paths_to_highlight = []
     if node1 == node2:
         return
-    paths = k_shortest(graph.euclidean_graph, node1, node2, 'weight')
+    paths = k_shortest(graph.graph, node1, node2, 'dist')
     for path in paths:
         store.paths_to_highlight.append(path)
 

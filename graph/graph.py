@@ -1,6 +1,7 @@
 import pandas as pd
 import networkx as nx
 from tqdm import tqdm
+import config as cfg
 
 # 4, 6
 variant = 4
@@ -29,14 +30,18 @@ class Graph:
                                             'min_type'], x[1:]))) for x in edges_tuple]
         self.edges_dict = dict(self.edges_dict)
 
-        self.euclidean_graph = nx.Graph()
+        self.graph = nx.Graph()
         for node in nodes_tuple:
-            self.euclidean_graph.add_node(node[0], type=node[1], coords=(node[2], node[3]))
+            self.graph.add_node(node[0], type=node[1], pos=(node[2], node[3]))
         for edge in edges_tuple:
-            self.euclidean_graph.add_edge(edge[1], edge[2],
-                                          index=edge[0],
-                                          weight=edge[3],
-                                          type=edge[4])
+            self.graph.add_edge(edge[1], edge[2],
+                                index=edge[0],
+                                dist=edge[3],
+                                type=edge[4])
+
+    @staticmethod
+    def calc_price(edge_type: int, dist: float, payload: float):
+        return cfg.type_info[edge_type].km_price * dist * (payload // cfg.type_info[edge_type].capacity + 1)
 
     def get_all_edges(self) -> dict:
         return self.edges_dict
