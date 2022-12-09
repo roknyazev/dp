@@ -30,12 +30,16 @@ class Graph:
                                             'min_type'], x[1:]))) for x in edges_tuple]
         self.edges_dict = dict(self.edges_dict)
 
-        self.graph = nx.Graph()
+        self.graph = nx.DiGraph()
         for node in nodes_tuple:
             self.graph.add_node(node[0], type=node[1], pos=(node[2], node[3]))
         for edge in edges_tuple:
             self.graph.add_edge(edge[1], edge[2],
                                 index=edge[0],
+                                dist=edge[3],
+                                type=edge[4])
+            self.graph.add_edge(edge[2], edge[1],
+                                index=-edge[0],
                                 dist=edge[3],
                                 type=edge[4])
 
