@@ -8,9 +8,9 @@ period_small = 1
 period_medium = 3
 period_large = 6
 
-capacity_small = 4
-capacity_medium = 25
-capacity_large = 100
+capacity_small = 25
+capacity_medium = 100
+capacity_large = 400
 
 km_price_small = 1
 km_price_medium = 5
